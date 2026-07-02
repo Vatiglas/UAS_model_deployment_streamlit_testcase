@@ -1,13 +1,3 @@
-"""
-app.py
-======
-Streamlit web app for Credit Score Classification.
-Model: Random Forest TUNED via GridSearchCV (accuracy 73.40%)
-
-Deploy: Streamlit Community Cloud via GitHub
-Run locally: streamlit run app.py
-"""
-
 import streamlit as st
 import pandas as pd
 
@@ -17,22 +7,20 @@ from inference import (
     PAYMENT_BEHAVIOUR_OPTIONS,
 )
 
-# ── Page Config ──────────────────────────────────────────────────────────────
+# Page Config 
 st.set_page_config(
     page_title="Credit Score Classifier",
-    page_icon="💳",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# ── Load Engine (cached so it only loads once per session) ────────────────────
 @st.cache_resource
 def load_engine():
     return CreditScoreInferenceEngine()
 
 engine = load_engine()
 
-# ── Custom CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     .main-title {
@@ -79,8 +67,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Header ────────────────────────────────────────────────────────────────────
-st.markdown('<p class="main-title">💳 Credit Score Classifier</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">Credit Score Classifier</p>', unsafe_allow_html=True)
 st.markdown(
     '<p class="subtitle">Prediksi performa kredit nasabah berdasarkan profil finansial — '
     'Model: Random Forest Tuned (Accuracy 73.40%)</p>',
@@ -89,9 +76,8 @@ st.markdown(
 
 st.divider()
 
-# ── Input Form ────────────────────────────────────────────────────────────────
 with st.form("credit_form"):
-    st.subheader("📋 Profil Nasabah")
+    st.subheader("Profil Nasabah")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -103,7 +89,7 @@ with st.form("credit_form"):
     with col4:
         payment_min = st.selectbox("Hanya Bayar Minimum?", ["No", "Yes"], index=0)
 
-    st.subheader("💰 Pendapatan & Tabungan")
+    st.subheader("Pendapatan & Tabungan")
     col5, col6, col7, col8 = st.columns(4)
     with col5:
         annual_income = st.number_input("Pendapatan Tahunan (USD)", min_value=0.0, value=50000.0, step=1000.0)
@@ -114,7 +100,7 @@ with st.form("credit_form"):
     with col8:
         amount_invested = st.number_input("Investasi Bulanan (USD)", min_value=0.0, value=100.0, step=10.0)
 
-    st.subheader("🏦 Profil Kredit")
+    st.subheader("Profil Kredit")
     col9, col10, col11, col12 = st.columns(4)
     with col9:
         num_bank_accounts = st.number_input("Jumlah Rekening Bank", min_value=0, value=3)
@@ -135,7 +121,7 @@ with st.form("credit_form"):
     with col16:
         credit_history = st.number_input("Lama Riwayat Kredit (bulan)", min_value=0, value=60)
 
-    st.subheader("⏱️ Riwayat Pembayaran")
+    st.subheader("Riwayat Pembayaran")
     col17, col18, col19, col20 = st.columns(4)
     with col17:
         delay_due_date = st.number_input("Rata-rata Keterlambatan (hari)", min_value=0, value=10)
@@ -150,7 +136,6 @@ with st.form("credit_form"):
 
     submitted = st.form_submit_button("🔍 Prediksi Credit Score")
 
-# ── Prediction & Result ────────────────────────────────────────────────────────
 if submitted:
     input_data = {
         "Age": age,
@@ -191,7 +176,7 @@ if submitted:
         unsafe_allow_html=True,
     )
 
-    st.subheader("📊 Probabilitas per Kelas")
+    st.subheader("Probabilitas per Kelas")
     proba_df = pd.DataFrame({
         "Kelas": list(proba.keys()),
         "Probabilitas (%)": list(proba.values()),
