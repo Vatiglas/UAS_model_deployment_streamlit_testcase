@@ -1,16 +1,3 @@
-"""
-preprocessing.py
-================
-OOP-based preprocessing class for Credit Score Classification pipeline.
-Handles data cleaning, feature engineering, and sklearn ColumnTransformer pipeline.
-
-IMPORTANT — Data Leakage Prevention:
-    clean() is a stateless, pure transformation (no fitting), so it is safe
-    to call separately on train_df and test_df.
-    fit_transform() fits the ColumnTransformer ONLY on training data;
-    transform() must be used for test/validation/inference data.
-"""
-
 import re
 import numpy as np
 import pandas as pd
@@ -20,8 +7,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 
-
-# ── Feature Groups ─────────────────────────────────────────────────────────────
 NUMERICAL_FEATURES = [
     "Age", "Annual_Income", "Monthly_Inhand_Salary", "Num_Bank_Accounts",
     "Num_Credit_Card", "Interest_Rate", "Num_of_Loan", "Delay_from_due_date",
@@ -35,7 +20,6 @@ NOMINAL_FEATURES  = ["Occupation", "Payment_Behaviour", "Payment_of_Min_Amount"]
 
 CREDIT_MIX_ORDER  = ["Bad", "Standard", "Good"]
 
-# Columns dropped before modelling (identifiers / free text)
 DROP_COLS = ["Unnamed: 0", "ID", "Customer_ID", "SSN", "Name",
              "Month", "Type_of_Loan", "Credit_History_Age"]
 
@@ -43,20 +27,10 @@ TARGET_COL = "Credit_Score"
 
 
 class CreditDataPreprocessor:
-    """
-    Cleans raw Credit Score CSV data and builds an sklearn preprocessing pipeline.
-
-    Usage
-    -----
-    preprocessor = CreditDataPreprocessor()
-    X_train_t, X_test_t = preprocessor.fit_transform(X_train, X_test)
-    """
 
     def __init__(self):
         self._pipeline: ColumnTransformer | None = None
         self._is_fitted: bool = False
-
-    # ── Static Cleaning Helpers ────────────────────────────────────────────────
 
     @staticmethod
     def _clean_numeric(series: pd.Series) -> pd.Series:
@@ -72,20 +46,9 @@ class CreditDataPreprocessor:
         match = re.search(r"(\d+)\s*Years?\s*and\s*(\d+)\s*Months?", str(val))
         return int(match.group(1)) * 12 + int(match.group(2)) if match else np.nan
 
-    # ── Public Interface ───────────────────────────────────────────────────────
-
     def clean(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-        """
-        Apply all cleaning rules to a raw DataFrame.
-
-        Returns
-        -------
-        X : pd.DataFrame  — feature matrix (cleaned, pre-encoding)
-        y : pd.Series     — target labels
-        """
         df = df.copy()
 
-        # --- Numeric columns stored as strings ---
         df["Age"] = self._clean_numeric(df["Age"])
         df.loc[(df["Age"] < 10) | (df["Age"] > 100), "Age"] = np.nan
 
@@ -108,17 +71,14 @@ class CreditDataPreprocessor:
             df["Amount_invested_monthly"].astype(str).str.replace("_", ""), errors="coerce"
         )
 
-        # --- Feature engineering ---
         df["Credit_History_Months"] = df["Credit_History_Age"].apply(
             self._parse_credit_history
         )
 
-        # --- Categorical noise ---
         df["Credit_Mix"]        = df["Credit_Mix"].replace("_", np.nan)
         df["Occupation"]        = df["Occupation"].replace("_______", np.nan)
         df["Payment_Behaviour"] = df["Payment_Behaviour"].replace("!@9#%8", np.nan)
-
-        # --- Extract target & drop irrelevant columns ---
+        
         y = df[TARGET_COL].copy()
         X = df.drop(columns=DROP_COLS + [TARGET_COL], errors="ignore")
         X = X[NUMERICAL_FEATURES + ORDINAL_FEATURES + NOMINAL_FEATURES]
@@ -126,7 +86,6 @@ class CreditDataPreprocessor:
         return X, y
 
     def build_pipeline(self) -> ColumnTransformer:
-        """Construct and return the sklearn ColumnTransformer pipeline."""
         num_pipe = Pipeline([
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler",  StandardScaler()),
@@ -169,13 +128,11 @@ class CreditDataPreprocessor:
         return X_train_t, X_test_t
 
     def transform(self, X: pd.DataFrame) -> np.ndarray:
-        """Transform new data using a fitted pipeline."""
         if not self._is_fitted:
             raise RuntimeError("Preprocessor not fitted yet. Call fit_transform() first.")
         return self._pipeline.transform(X)
 
     def get_feature_names(self) -> list[str]:
-        """Return all feature names after encoding."""
         if self._pipeline is None or not self._is_fitted:
             raise RuntimeError("Pipeline not fitted yet.")
         ohe_names = list(
