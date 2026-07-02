@@ -1,20 +1,9 @@
-"""
-inference.py
-============
-Core inference engine for Credit Score Classification.
-Loads the trained Random Forest model (TUNED via GridSearchCV: n_estimators=100,
-max_depth=20, min_samples_split=2, accuracy 73.40%) + preprocessor + label
-encoder, and exposes a clean predict() interface for the Streamlit app layer.
-"""
-
 import joblib
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
-
-# ── Feature groups (must match training exactly) ───────────────────────────
 NUMERICAL_FEATURES = [
     "Age", "Annual_Income", "Monthly_Inhand_Salary", "Num_Bank_Accounts",
     "Num_Credit_Card", "Interest_Rate", "Num_of_Loan", "Delay_from_due_date",
@@ -50,16 +39,7 @@ LABEL_DESCRIPTIONS = {
 
 
 class CreditScoreInferenceEngine:
-    """
-    Loads saved artefacts (Random Forest — TUNED via GridSearchCV) and
-    performs single inference.
-
-    Parameters
-    ----------
-    model_path        : path to model_random_forest.pkl
-    preprocessor_path : path to CreditDataPreprocessor .pkl
-    label_encoder_path: path to LabelEncoder .pkl
-    """
+    
 
     def __init__(
         self,
@@ -76,13 +56,7 @@ class CreditScoreInferenceEngine:
         self._le           = joblib.load(label_encoder_path)
 
     def predict(self, input_data: dict) -> dict:
-        """
-        Predict credit score for a single input dictionary.
-
-        Returns
-        -------
-        dict with keys: label, label_index, probabilities, color, description
-        """
+        
         df  = self._dict_to_dataframe(input_data)
         X_t = self._preprocessor.transform(df)
 
